@@ -1,0 +1,232 @@
+<mvc:View controllerName="com.seidor.zuxppapont.controller.Main"
+    xmlns:mvc="sap.ui.core.mvc" displayBlock="true"
+    xmlns="sap.m"
+    xmlns:f="sap.ui.layout.form"
+	xmlns:core="sap.ui.core"
+	xmlns:layout="sap.ui.layout"
+	xmlns:semantic="sap.m.semantic">
+
+	<SplitContainer id="ID_PAGE_MAINVIEW">
+		
+		<masterPages>
+			<semantic:MasterPage id="ID_MASTERPAGE_MAINVIEW"
+								 showFooter="false">
+				
+				
+				<semantic:content>
+				
+					<semantic:FullscreenPage
+									id="ID_SUBMASTERPAGE_MAINVIEW"
+									showNavButton="false"
+									title="{i18n>masterTitle}">
+									
+						<semantic:subHeader>	      
+						<Toolbar>
+							<SearchField id="ID_SEARCHFIELD_MAINVIEW"
+										maxLength="10"
+										placeholder="{i18n>inputFilterPlaceholder}"
+										search="onHandleSearch"/>
+							
+							<Button id="ID_ADDFILTER_MAINVIEW" 
+									tooltip="{i18n>buttonAddTooltip}" 
+									icon="sap-icon://add-filter" 
+									press="onHandleApproveBtnPress"/>
+							</Toolbar> 
+						</semantic:subHeader>
+									
+						<semantic:content>
+
+							<List id="ID_LIST_MAINVIEW"
+								items="{mainView>/tableOrders}">
+								
+								<items>
+
+									<ObjectListItem
+													type="Active"
+													title="{mainView>title}"
+													intro="{mainView>description}"
+													number="{mainView>quant1}"
+													numberUnit="{mainView>unit1}"
+													numberState="Success"
+													highlight="Warning"
+													icon="sap-icon://eam-work-order"
+													iconDensityAware="false"
+													press="onHandleDetail">	
+														
+										<firstStatus>
+											<ObjectStatus text="{mainView>data}" 
+														  state="Warning"/>
+										</firstStatus>	
+
+										<ObjectAttribute title="{i18n>tableAttribLabel2}"
+														 text="{mainView>info2}" />
+										<ObjectAttribute title="{i18n>tableAttribLabel3}"
+														 text="{mainView>info3}" />
+										<ObjectAttribute title="{i18n>tableAttribLabel1}"
+														 text="{mainView>info1}" />				 
+
+									</ObjectListItem>
+								
+								</items>
+							</List>
+									
+						</semantic:content>
+						
+						<semantic:customFooterContent>
+								<Button 
+										id="ID_BTN_CLEAR_MAINVIEW" 
+										text="{i18n>buttonDeleteLabel}" 
+										type="Negative" 
+										icon="sap-icon://sys-cancel-2" 
+										press="onHandleDelete"/>
+						</semantic:customFooterContent>
+
+					</semantic:FullscreenPage>
+
+				</semantic:content>
+				
+			</semantic:MasterPage> 
+		</masterPages>
+		
+		<detailPages>
+			<semantic:DetailPage id="ID_DETAILPAGE_MAINVIEW" 
+								 showFooter="false">
+
+				<semantic:content>				 
+					
+					<semantic:FullscreenPage
+									id="ID_SUBDETAILPAGE_MAINVIEW"
+									showNavButton="true"
+									navButtonPress="onHandleBackMaster"
+									title="{i18n>detailTitle}">
+									
+						<semantic:content>
+
+							<ObjectHeader title="{mainView>/headerApontamento/title}"
+										  intro="{mainView>/headerApontamento/description}"
+										  icon="sap-icon://eam-work-order"
+										  number="{mainView>/headerApontamento/quant1}"
+										  numberUnit="{mainView>/headerApontamento/unit1}"
+										  numberState="Success"
+										  responsive="true">
+
+										<firstStatus>
+											<ObjectStatus text="{mainView>/headerApontamento/status}" 
+														  state="Error"/>
+										</firstStatus>											  
+
+							</ObjectHeader>
+
+							<Table id="ID_TABLEDETAIL_MAINVIEW"
+								items="{mainView>/tableApontamentos}"
+								class="sapUiTinyMargin">
+								<headerToolbar>
+									<OverflowToolbar>
+										<content>
+											<Title text="{i18n>tableTitle1}" level="H2"/>
+										</content>
+									</OverflowToolbar>
+								</headerToolbar>
+								<columns>
+									<Column
+										hAlign="Center"
+										width="5rem">
+										<Text text="{i18n>tableColumnLabel5}" />
+									</Column>									
+									<Column hAlign="Center"
+											width="5rem">
+										<Text text="{i18n>tableColumnLabel1}" />
+									</Column>
+									<Column>
+										<Text text="{i18n>tableColumnLabel2}" />
+									</Column>
+									<Column
+										minScreenWidth="Tablet"
+										demandPopin="true"
+										width="10rem">
+										<Text text="{i18n>tableColumnLabel4}" />
+									</Column>
+									<Column
+										minScreenWidth="Tablet"
+										demandPopin="true">
+										<Text text="{i18n>tableColumnLabel6}" />
+									</Column>	
+									<Column
+										minScreenWidth="Tablet"
+										demandPopin="true"
+										width="10rem">
+										<Text text="{i18n>tableColumnLabel7}" />
+									</Column>		
+									<Column
+										minScreenWidth="Tablet"
+										demandPopin="true"
+										width="10rem">
+										<Text text="{i18n>tableColumnLabel8}" />
+									</Column>	
+									<Column
+										minScreenWidth="Tablet"
+										demandPopin="true">
+										<Text text="{i18n>tableColumnLabel9}" />
+									</Column>																																	
+								</columns>
+								<items>
+									<ColumnListItem>
+										<cells>
+											<Text
+												text="{mainView>info4}" />										
+											<Text
+												text="{mainView>info1}" />										
+											<ObjectIdentifier
+												title="{mainView>info2}"
+												text="{mainView>info2_1}"/>
+											<HBox>
+												<Input
+													type="Number"
+													value="{mainView>info3}" 
+													width="5rem"/>
+												<Text text="{mainView>info3_1}" 
+													  class="sapUiSmallMarginBegin"/>
+											</HBox>
+											<ObjectIdentifier
+												title="{mainView>info5}"
+												text="{mainView>info5_1}"/>
+											<Text
+												text="{mainView>info6}" />
+											<HBox>
+												<Input
+													type="Number"
+													value="{mainView>info7}" 
+													width="5rem"/>	
+												<Text text="{mainView>info7_1}" 
+													  class="sapUiSmallMarginBegin"/>	
+											</HBox>
+											<Text
+												text="{mainView>info8}" />
+										</cells>
+									</ColumnListItem>
+								</items>
+							</Table>							
+
+							
+									
+						</semantic:content>
+						
+						<semantic:customFooterContent>
+								<Button 
+										id="ID_BTN_SAVE_MAINVIEW" 
+										text="{i18n>buttonSaveLabel}" 
+										type="Emphasized" 
+										icon="sap-icon://save" 
+										press="onHandleSave"/>
+						</semantic:customFooterContent>
+
+					</semantic:FullscreenPage>
+
+				</semantic:content>
+					
+
+			</semantic:DetailPage>
+		</detailPages>
+	</SplitContainer>
+
+</mvc:View>
