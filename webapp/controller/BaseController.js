@@ -1,9 +1,13 @@
 sap.ui.define([
 	"sap/ui/core/mvc/Controller",
-	"sap/ui/model/json/JSONModel"
+	"sap/ui/model/json/JSONModel",
+	"com/seidor/zuxppapont/model/constants",
+	"sap/ui/core/BusyIndicator"
 ], function(
         Controller,
-        JSONModel
+        JSONModel,
+		constants,
+		BusyIndicator
 ) {
 	"use strict";
 
@@ -59,21 +63,22 @@ sap.ui.define([
 			createBancoDadosOffline: function(){
 				//Create required DBs
 				PouchDB("dbPouch");
-				PouchDB("dbPouchParams");
+				PouchDB("dbPouchPendSend");
 			},
 			
 			/**
 			 * @public
 			 */			
-			getDadosBancoOffline: function(){
+			getDadosBancoOffline: function(oId){
 				return new Promise(function(resolve, reject) {
-					var db = PouchDB("dbPouch");
+					var db = PouchDB("dbPouch"),
+						sId = oId;
 					
-					db.get('reservas').then(function (doc) {
+					db.get(sId).then(function (doc) {
 						var aList = [];
 						
 						doc.Content.forEach(function(oEntry){ 
-							oEntry.DataEntrega = new Date(oEntry.DataEntrega);
+							//oEntry.DataEntrega = new Date(oEntry.DataEntrega);
 							aList.push(oEntry);
 		    			}, this);
 						
@@ -88,13 +93,14 @@ sap.ui.define([
 			/**
 			 * @public
 			 */			
-			setDadosBancoOffline: function(oDados){
-				var db = PouchDB("dbPouch");
+			setDadosBancoOffline: function(oId, oDados){
+				var db = PouchDB("dbPouch"),
+					vId = oId;
 				
 				return new Promise(function(resolve, reject) {
 					db.destroy().then(function () {
 						db = new PouchDB("dbPouch");
-						db.put({ _id: "reservas",
+						db.put({ _id: vId,
 								 Content: oDados });
 						resolve();
 					}.bind(this));
@@ -254,17 +260,16 @@ sap.ui.define([
 			callApi: function(sPath, aFilters) {
 				
 				var sHeaders = constants.HEADER_REQUEST;
-				sHeaders['Authorization'] =  "BASIC " + this._getAuthorization();
+				//sHeaders['Authorization'] =  "BASIC " + this._getAuthorization();
 				
-				//var sVault = window.atob(this._getAuthorization()).split(":");
 				
 				BusyIndicator.show();
 				
 				return new Promise(function(resolve, reject) {			
 					OData.request({ requestUri : this.getHost() + constants.MAIN_SERVICE + sPath,
 									method 	   : "GET",
-									user	   : 'abcd',//sVault[0], 
-									password   : '1234',//sVault[1],
+									//user	   : 'abcd',//sVault[0], 
+									//password   : '1234',//sVault[1],
 									filters    : aFilters,
 									headers	   : sHeaders
 								   },

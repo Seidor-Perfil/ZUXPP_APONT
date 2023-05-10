@@ -18,7 +18,7 @@ server:
         backend:
           - path: /sap
             url: http://perfilcidev.perfilaluminio.com.br:8000
-            client: '100'
+            client: '050'
     - name: fiori-tools-appreload
       afterMiddleware: compression
       configuration:

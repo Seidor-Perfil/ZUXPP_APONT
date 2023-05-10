@@ -33,6 +33,8 @@ sap.ui.define([
                 });
 
                 this.setModel(oViewModel, "mainView");
+
+                this.createBancoDadosOffline();
             },
 
 			/* =========================================================== */
@@ -70,10 +72,83 @@ sap.ui.define([
                 var oFilter = new Filter("title", FilterOperator.Contains, sValue);
                 var oBinding = this.byId("ID_LIST_MAINVIEW").getBinding("items");
                 oBinding.filter([oFilter]);
-            }
+            },
+
+ 			/**
+			 * @public
+			 */             
+            onHandleAddFilter:function(oEvent){
+                if (!this._oDialogVHlpOrdem) {
+                    this._oDialogVHlpOrdem = sap.ui.xmlfragment(this.getView().getId(),"com.seidor.zuxppapont.view.fragments.DialogVHlpOrdem", this);
+                }
+        
+                this.getView().addDependent(this._oDialogVHlpOrdem);
+                jQuery.sap.syncStyleClass("sapUiSizeCompact", this.getView(), this._oDialogVHlpOrdem);
+    
+                 this._oDialogVHlpOrdem.open();  
+
+                 var oTable = this.byId("ID_TABLE_ADDFILTER_DIALOG");
+                 oTable.setModel(this.getModel());
+                 //oTable.refreshAggregation("items");               
+            },
+
+ 			/**
+			 * @public
+			 */               
+            onHandleCloseFilter: function(oEvent){
+                this._oDialogVHlpOrdem.destroy();
+                this._oDialogVHlpOrdem = null;
+            },
+
+ 			/**
+			 * @public
+			 */              
+            onHandleSearchFilter: function(oEvent){
+                var sValue = oEvent.getParameter("value");
+                var oFilter = new Filter("Ordem", sap.ui.model.FilterOperator.Contains, sValue);
+                var oBinding = oEvent.getSource().getBinding("items");
+                oBinding.filter([oFilter]);
+            },
+
+ 			/**
+			 * @public
+			 */              
+            onHandleConfirmFilter: function(oEvent){
+                
+                var oDados = [],
+                    oSelectedItems = oEvent.getParameter("selectedItems");
+
+                oSelectedItems.forEach(function(oItem) {
+                    
+                    var sDados = oItem.getBindingContext().getObject(),
+                        sPath = "/GET_VALORES_PLANEJADOSSet(ORDEM='" + sDados.Ordem + "',MOSTRAR_ERROS='X')";
+
+                    this.callApi(sPath, []).then(result => {
+
+                        var aSelectOrdem = [];
+
+                        if(!!result.DADOS_VLRS_PLANJ){
+                            aSelectOrdem = JSON.parse(result.DADOS_VLRS_PLANJ);
+                            this.getDadosBancoOffline("Ordem").then(result => {
+                                oDados = result.concat(aSelectOrdem);
+                                this.setDadosBancoOffline("Ordem", oDados).then(result => { this._atualizaMaster(); }, this); 
+                            }, this);
+                        }
+						
+					    }).catch(reason => {
+					    	console.log(reason);
+					    }); 
+                }, this);
+            },
 
 			/* =========================================================== */
 			/* internal methods                                            */
-			/* =========================================================== */            
+			/* =========================================================== */   
+ 			/**
+			 * @private
+			 */              
+            _atualizaMaster: function(){
+
+            }
         });
     });

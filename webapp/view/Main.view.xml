@@ -30,7 +30,7 @@
 							<Button id="ID_ADDFILTER_MAINVIEW" 
 									tooltip="{i18n>buttonAddTooltip}" 
 									icon="sap-icon://add-filter" 
-									press="onHandleApproveBtnPress"/>
+									press="onHandleAddFilter"/>
 							</Toolbar> 
 						</semantic:subHeader>
 									
