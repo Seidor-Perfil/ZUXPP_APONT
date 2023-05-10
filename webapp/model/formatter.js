@@ -19,6 +19,10 @@ sap.ui.define([
 
             return oNumberFormat.format(pValue1) + " " + pValue2 + "\n" + pValue3 + "-" + pValue4;
 
+        },
+
+        getColorStatusSend: function(pValue1){
+            return !!pValue1 ? 'Success' : 'Warning';
         }
 
     };

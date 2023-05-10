@@ -69,12 +69,11 @@ sap.ui.define([
 			/**
 			 * @public
 			 */			
-			getDadosBancoOffline: function(oId){
+			getDadosBancoOffline: function(){
 				return new Promise(function(resolve, reject) {
-					var db = PouchDB("dbPouch"),
-						sId = oId;
+					var db = PouchDB("dbPouch");
 					
-					db.get(sId).then(function (doc) {
+					db.get("Ordem").then(function (doc) {
 						var aList = [];
 						
 						doc.Content.forEach(function(oEntry){ 
@@ -93,14 +92,13 @@ sap.ui.define([
 			/**
 			 * @public
 			 */			
-			setDadosBancoOffline: function(oId, oDados){
-				var db = PouchDB("dbPouch"),
-					vId = oId;
+			setDadosBancoOffline: function(oDados){
+				var db = PouchDB("dbPouch");
 				
 				return new Promise(function(resolve, reject) {
 					db.destroy().then(function () {
 						db = new PouchDB("dbPouch");
-						db.put({ _id: vId,
+						db.put({ _id: "Ordem",
 								 Content: oDados });
 						resolve();
 					}.bind(this));

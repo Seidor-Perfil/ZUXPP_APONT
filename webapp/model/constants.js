@@ -27,36 +27,6 @@
             "title": "Consultar",
             "info": "Apontamentos Realizados"
         }],
-        TABLE_ORDERS: [{
-            "title": "6000032",
-            "description": "SG290 - SEM29,PD,QM2",
-            "data": "10/04/2023",
-            "quant1": "15 PEÇ",
-            "unit1": "Confirmadas",
-            "info1": "3 PEÇ",
-            "info2": "AB6512654",
-            "info3": "1"
-        },
-        {
-            "title": "6000033",
-            "description": "SG29 - SEM29,PD,QM",
-            "data": "01/04/2023",
-            "quant1": "25 PEÇ",
-            "unit1": "Confirmadas",
-            "info1": "5 PEÇ",
-            "info2": "CC653135",
-            "info3": "2"
-        },
-        {
-            "title": "6000034",
-            "description": "SG300 - SEM30,PD,QM231",
-            "data": "05/05/2023",
-            "quant1": "55 PEÇ",
-            "unit1": "Confirmadas",
-            "info1": "2 PEÇ",
-            "info2": "ZZ9651651",
-            "info3": "3"
-        }],
         DETAIL_HEADER: {
             "title": "6000034",
             "description": "SG300 - SEM30,PD,QM231",

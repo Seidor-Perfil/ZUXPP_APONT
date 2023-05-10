@@ -26,7 +26,7 @@ sap.ui.define([
 
                 // Model used to manipulate control states
                 oViewModel = new JSONModel({
-                    tableOrders: constants.TABLE_ORDERS,
+                    tableOrders: [],
                     headerApontamento: constants.DETAIL_HEADER,
                     tableApontamentos: constants.DETAIL_TABLE,
                     UserLoged: ''
@@ -35,6 +35,13 @@ sap.ui.define([
                 this.setModel(oViewModel, "mainView");
 
                 this.createBancoDadosOffline();
+            },
+
+            /**
+             * @override
+             */
+            onAfterRendering: function() {
+                this._atualizaMaster();
             },
 
 			/* =========================================================== */
@@ -62,6 +69,8 @@ sap.ui.define([
                 oViewModel.setProperty("/headerApontamento", {});
                 oViewModel.setProperty("/tableOrders", []);
                 oViewModel.setProperty("/tableApontamentos", []);
+
+                this.setDadosBancoOffline([]).then(result => { this._atualizaMaster(); }, this); 
             },
 
  			/**
@@ -69,7 +78,7 @@ sap.ui.define([
 			 */ 
             onHandleSearch: function(oEvent){
                 var sValue = oEvent.getParameter("query");
-                var oFilter = new Filter("title", FilterOperator.Contains, sValue);
+                var oFilter = new Filter("AUFNR", FilterOperator.Contains, sValue);
                 var oBinding = this.byId("ID_LIST_MAINVIEW").getBinding("items");
                 oBinding.filter([oFilter]);
             },
@@ -123,15 +132,23 @@ sap.ui.define([
                     var sDados = oItem.getBindingContext().getObject(),
                         sPath = "/GET_VALORES_PLANEJADOSSet(ORDEM='" + sDados.Ordem + "',MOSTRAR_ERROS='X')";
 
+                    this.sSelectedOrdem = sDados;
+
                     this.callApi(sPath, []).then(result => {
 
                         var aSelectOrdem = [];
 
                         if(!!result.DADOS_VLRS_PLANJ){
                             aSelectOrdem = JSON.parse(result.DADOS_VLRS_PLANJ);
-                            this.getDadosBancoOffline("Ordem").then(result => {
-                                oDados = result.concat(aSelectOrdem);
-                                this.setDadosBancoOffline("Ordem", oDados).then(result => { this._atualizaMaster(); }, this); 
+                            this.getDadosBancoOffline().then(result => {
+
+                                let sData = result.find(({ AUFNR }) => AUFNR == this.sSelectedOrdem.Ordem);
+
+                                if(!sData){
+                                    oDados = result.concat(aSelectOrdem);
+                                    this.setDadosBancoOffline(oDados).then(result => { this._atualizaMaster(); }, this); 
+                                }
+
                             }, this);
                         }
 						
@@ -148,7 +165,22 @@ sap.ui.define([
 			 * @private
 			 */              
             _atualizaMaster: function(){
+                var oViewModel = this.getModel("mainView"),
+                    oDados = [];
 
+                oViewModel.setProperty("/tableOrders", []);
+
+                this.getDadosBancoOffline().then(result => {
+                    result.forEach(function(oItem) {
+                        let sData = oDados.find(({ AUFNR }) => AUFNR == oItem.AUFNR);
+                        
+                        if(!sData)
+                            oDados.push(oItem);
+                        
+                    }, this);
+
+                    oViewModel.setProperty("/tableOrders", oDados);
+                }, this);
             }
         });
     });

@@ -37,33 +37,38 @@
 						<semantic:content>
 
 							<List id="ID_LIST_MAINVIEW"
-								items="{mainView>/tableOrders}">
+								items="{
+											path: 'mainView>/tableOrders',
+											sorter: {
+												path: 'AUFNR'
+											}
+										}">
 								
 								<items>
 
 									<ObjectListItem
 													type="Active"
-													title="{mainView>title}"
-													intro="{mainView>description}"
-													number="{mainView>quant1}"
-													numberUnit="{mainView>unit1}"
+													title="{mainView>AUFNR}"
+													intro="{mainView>COD_MAT} - {mainView>DESC_MAT}"
+													number="{mainView>WEMNG} {mainView>LAGME}"
+													numberUnit="Confirmadas"
 													numberState="Success"
-													highlight="Warning"
+													highlight="{path: 'mainView>APONT_FEITO', formatter: '.formatter.getColorStatusSend'}"
 													icon="sap-icon://eam-work-order"
 													iconDensityAware="false"
 													press="onHandleDetail">	
 														
 										<firstStatus>
-											<ObjectStatus text="{mainView>data}" 
+											<ObjectStatus text="{mainView>CO_GLTRI}" 
 														  state="Warning"/>
 										</firstStatus>	
 
 										<ObjectAttribute title="{i18n>tableAttribLabel2}"
-														 text="{mainView>info2}" />
+														 text="{mainView>LOTE}" />
 										<ObjectAttribute title="{i18n>tableAttribLabel3}"
-														 text="{mainView>info3}" />
+														 text="{mainView>SEQ_CONFIRMACAO}" />
 										<ObjectAttribute title="{i18n>tableAttribLabel1}"
-														 text="{mainView>info1}" />				 
+														 text="{mainView>GAMNG} {mainView>LAGME}" />				 
 
 									</ObjectListItem>
 								
