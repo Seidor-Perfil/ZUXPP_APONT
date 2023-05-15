@@ -354,6 +354,8 @@ sap.ui.define([
 			 */	            
 			_startJob: function(){
 
+				var sTimer = 0;
+
 				if(!this.isNetworkConnection())
 					return;
 
@@ -370,11 +372,15 @@ sap.ui.define([
 					oDataOrdem.forEach(function(oItem) {
 						
 						var oDados = result.filter(({ AUFNR }) => AUFNR == oItem.AUFNR);
-						this._sendDados(oDados, true);
+						
+						//Descarga por ordem de 10 em 10 segundos
+						sTimer += 10000;
+						
+						setTimeout(function(){this._sendDados(oDados, true)}.bind(this), sTimer);
 						
 					}, this);
 
-				}, this);                
+				}, this);             
 
 			}			
 			        

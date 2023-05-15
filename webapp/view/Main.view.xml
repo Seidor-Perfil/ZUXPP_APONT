@@ -17,7 +17,8 @@
 				
 					<semantic:FullscreenPage
 									id="ID_SUBMASTERPAGE_MAINVIEW"
-									showNavButton="false"
+									showNavButton="true"
+									navButtonPress="onHandleBackApp"
 									title="{i18n>masterTitle}">
 									
 						<semantic:subHeader>	      

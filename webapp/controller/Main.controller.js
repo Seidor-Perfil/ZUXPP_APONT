@@ -75,6 +75,13 @@ sap.ui.define([
                 this.byId("ID_PAGE_MAINVIEW").toMaster(this.createId("ID_MASTERPAGE_MAINVIEW"));
             },
 
+ 			/**
+			 * @public
+			 */             
+            onHandleBackApp: function(oEvent){
+                history.go(-1);
+            },
+
 			/**
 			 * @public
 			 */ 
@@ -97,6 +104,14 @@ sap.ui.define([
 			 * @public
 			 */             
             onHandleAddFilter:function(oEvent){
+
+                if(!this.isNetworkConnection()){
+                    MessageBox.error( this.getResourceBundle().getText("messageErrorNoConnection"), 
+                                        { title : this.getResourceBundle().getText("messageTitleError"),
+                                          styleClass: this.getOwnerComponent().getContentDensityClass()
+                                        }, this); 
+                   return;
+                }               
                 
                 if (!this._oDialogVHlpOrdem) {
                     this._oDialogVHlpOrdem = sap.ui.xmlfragment(this.getView().getId(),"com.seidor.zuxppapont.view.fragments.DialogVHlpOrdem", this);
@@ -182,7 +197,7 @@ sap.ui.define([
                     this._sendDados(oDados,false);
                 }else{
                     MessageBox.warning( this.getResourceBundle().getText("messageWarningSendDados"), 
-                    { title : this.getResourceBundle().getText("messageTileWarningSendDados"),
+                    { title : this.getResourceBundle().getText("messageTitleWarning"),
                     styleClass: this.getOwnerComponent().getContentDensityClass()
                    }, this);
 
@@ -312,16 +327,22 @@ sap.ui.define([
                         }
                         
                         //Atualiza Valores no Banco Offline
-                        var sPath = "/GET_VALORES_PLANEJADOSSet(ORDEM='" + oDados[0].AUFNR + "',MOSTRAR_ERROS='X')";
+                        var sPath = "/GET_APONTAMENTOSSet(ORDEM='" + oDados[0].AUFNR + "',DADOS_APONTAMENTO='')";
                         
                         this.callApi(sPath, []).then(result => {
 
-                            if(!!result.DADOS_VLRS_PLANJ){
-                                var oResults = JSON.parse(result.DADOS_VLRS_PLANJ);
-                                console.log(oResults);
-                                /*oResults.forEach(function(oItem) {
-                                    this.atualizaDadosBancoOffline(oItem).then(result => {  if(!vIsJob){this._atualizaDetail(oDados[0].AUFNR);} }, this); 
-                                }, this);*/
+                            if(!!result.DADOS_APONTAMENTO){
+                                var oResults = JSON.parse(result.DADOS_APONTAMENTO);
+                                
+                                //Joga todas as mensagens de retorno no primeiro item
+                                if(!!oResults.length)
+                                    oDados[0].MESSAGE = oResults[0].MESSAGE1 + oResults[0].MESSAGE2 + oResults[0].MESSAGE3 + oResults[0].MESSAGE4 + oResults[0].MESSAGE5 + 
+                                                        oResults[0].MESSAGE6 + oResults[0].MESSAGE7 + oResults[0].MESSAGE8 + oResults[0].MESSAGE9 + oResults[0].MESSAGE10 +
+                                                        oResults[0].MESSAGE11 + oResults[0].MESSAGE12 + oResults[0].MESSAGE13 + oResults[0].MESSAGE14 + oResults[0].MESSAGE15;
+                                
+                                oDados.forEach(function(oItem) {
+                                    this.atualizaDadosBancoOffline(oItem).then(result => {  if(!vIsJob){this._atualizaDetail(oDados[0].AUFNR); } }, this); 
+                                }, this);
                             }
                             
                             }).catch(reason => {
