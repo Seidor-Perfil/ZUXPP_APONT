@@ -21,8 +21,22 @@ sap.ui.define([
 
         },
 
+        formatDate: function(pValue1){
+            return pValue1 == '00000000' ? '' : pValue1.substring(6,8) + 
+                                                "/" + pValue1.substring(4,6) + 
+                                                "/" + pValue1.substring(0,4);
+        },
+
         getColorStatusSend: function(pValue1){
             return !!pValue1 ? 'Success' : 'Warning';
+        },
+
+        getTextStatusSend: function(pValue1){
+            return !!pValue1 ? 'Apontamento Realizado' : 'Apontamento Pendente';
+        },
+
+        getIconStatusSend: function(pValue1){
+            return !!pValue1 ? 'sap-icon://sys-enter-2' : 'sap-icon://information';
         }
 
     };

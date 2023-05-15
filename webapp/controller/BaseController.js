@@ -7,7 +7,8 @@ sap.ui.define([
         Controller,
         JSONModel,
 		constants,
-		BusyIndicator
+		BusyIndicator,
+
 ) {
 	"use strict";
 
@@ -31,10 +32,17 @@ sap.ui.define([
 				if(sName){
 					return this.getView().getModel(sName);
 				}else{
-					var vURL = this.getHost() + constants.MAIN_SERVICE;
-					var oModel = new sap.ui.model.odata.v2.ODataModel(vURL, true);
-					return oModel;
+					if(this.isStandAlone()){
+						return new sap.ui.model.odata.v2.ODataModel( this.getHost() + constants.MAIN_SERVICE + '/?sap-client=050', 
+																		{ headers:{"X-Requested-With":"X",
+																			   	   "Authorization": "BASIC " + this._getAuthorization() }});
+					}else{
+						return new sap.ui.model.odata.v2.ODataModel(constants.MAIN_SERVICE, {headers:{"X-Requested-With":"X"}});
+					}
 				}
+
+				
+
 			},
 
 			/**
@@ -116,7 +124,7 @@ sap.ui.define([
 						oDados = result;
 						
 						oDados.forEach(function(oEntry, oIndex){ 
-		    				if(oEntry.Rsnum === oData.Rsnum && oEntry.Rspos === oData.Rspos)
+		    				if(oEntry.AUFNR === oData.AUFNR && oEntry.SEQ === oData.SEQ)
 		    					oDados[oIndex] = oData;
 		    			}, this);
 						
@@ -140,7 +148,7 @@ sap.ui.define([
 						oDados = result;
 						
 						oDados = oDados.filter(function(oEntry){
-							return oEntry.Rsnum !== oData.Rsnum || oEntry.Rspos !== oData.Rspos;
+							return oEntry.AUFNR !== oData.AUFNR || oEntry.SEQ !== oData.SEQ;
 						});
 						
 						this.setDadosBancoOffline(oDados).then(result => {
@@ -155,19 +163,14 @@ sap.ui.define([
 			/**
 			 * @public
 			 */	
-			_setParams: function(iv_uname, iv_isGestor, iv_HoraIniJornada, iv_HoraFimJornada){			
-				var db = PouchDB("dbPouchParams");
+			_setDadosPend: function(oDados){			
+				var db = PouchDB("dbPouchPendSend");
 				
 				return new Promise(function(resolve, reject) {
 					db.destroy().then(function () {
-						db = new PouchDB("dbPouchParams");
-						db.put({ _id: "parametros",
-							 Content: {
-								 		Uname		   : iv_uname,
-								 	    isGestor 	   : iv_isGestor,
-								 		HoraIniJornada : iv_HoraIniJornada,
-								 		HoraFimJornada : iv_HoraFimJornada
-							 		  } });
+						db = new PouchDB("dbPouchPendSend");
+						db.put({ _id: "DadosPend",
+							 	 Content: oDados });
 						resolve();
 					}.bind(this));
 				}.bind(this));
@@ -176,11 +179,11 @@ sap.ui.define([
 			/**
 			 * @public
 			 */			
-			_getParams: function(){
+			_getDadosPend: function(){
 				return new Promise(function(resolve, reject) {
-					var db = PouchDB("dbPouchParams");
+					var db = PouchDB("dbPouchPendSend");
 					
-					db.get('parametros').then(function (doc) {
+					db.get('DadosPend').then(function (doc) {
 						resolve(doc.Content);
 					}).catch(function (err) {
 						resolve([]);
@@ -188,6 +191,29 @@ sap.ui.define([
 					
 				});
 			},
+
+			/**
+			 * @public
+			 */			
+			_removeDadosPend: function(oData){
+				return new Promise(function(resolve, reject) {
+					var oDados = [];
+					
+					this._getDadosPend().then(result => {
+						oDados = result;
+						
+						oDados = oDados.filter(function(oEntry){
+							return oEntry.AUFNR !== oData.AUFNR;
+						});
+						
+						this._setDadosPend(oDados).then(result => {
+							resolve();
+						}, this);
+						
+					}, this);
+					
+				}.bind(this));
+			},			
 			
 			/**
 			 * @public
@@ -237,8 +263,8 @@ sap.ui.define([
 				var sProtocol = location.protocol;
 				var vHost;
 				
-				if(this.isStandAlone()){		//App install
-					vHost = fiori_client_appConfig.fioriURL.replace(constants.LAUNCHPAD_SERVICE,'');
+				if(this.isStandAlone()){					//App install
+					vHost = fiori_client_appConfig.fioriURLHttps.replace(constants.LAUNCHPAD_SERVICE,'');
 				}else{										//Fiori Client or Launchpad
 					var vSlashes = sProtocol.concat("//");
 					var vHost = vSlashes.concat(window.location.hostname);
@@ -268,8 +294,8 @@ sap.ui.define([
 									method 	   : "GET",
 									//user	   : 'abcd',//sVault[0], 
 									//password   : '1234',//sVault[1],
-									filters    : aFilters,
-									headers	   : sHeaders
+									filters    : aFilters
+									//headers	   : sHeaders
 								   },
 								   function (oData, oResponse) {
 									    BusyIndicator.hide();
@@ -313,8 +339,44 @@ sap.ui.define([
 			 * public
 			 */	
 			_getAuthorization: function () {
-				return JSON.parse(window.localStorage.getItem("AuthToken"));
-			}            
+				return fiori_client_appConfig.authUser; //window.btoa(user + ":" + password)
+			},
+			
+			/**
+			 * public
+			 */	            
+			_createJob: function(){
+				setInterval(function(){this._startJob()}.bind(this), 60000);
+			},
+
+			/**
+			 * public
+			 */	            
+			_startJob: function(){
+
+				if(!this.isNetworkConnection())
+					return;
+
+				this._getDadosPend().then(result => {
+					
+					if(!result.length)
+						return;
+					
+					//Delete Adjacents por Ordem
+					var oDataOrdem = result.filter((obj, index) => {
+						return index === result.findIndex(o => obj.AUFNR === o.AUFNR);
+					});
+
+					oDataOrdem.forEach(function(oItem) {
+						
+						var oDados = result.filter(({ AUFNR }) => AUFNR == oItem.AUFNR);
+						this._sendDados(oDados, true);
+						
+					}, this);
+
+				}, this);                
+
+			}			
 			        
 	});
 });

@@ -47,11 +47,12 @@
 								<items>
 
 									<ObjectListItem
+													id="ID_LISTITEM_MAINVIEW"
 													type="Active"
 													title="{mainView>AUFNR}"
-													intro="{mainView>COD_MAT} - {mainView>DESC_MAT}"
+													intro="{mainView>MATERIAL} - {mainView>MAKTX}"
 													number="{mainView>WEMNG} {mainView>LAGME}"
-													numberUnit="Confirmadas"
+													numberUnit="{i18n>listItemLabel1}"
 													numberState="Success"
 													highlight="{path: 'mainView>APONT_FEITO', formatter: '.formatter.getColorStatusSend'}"
 													icon="sap-icon://eam-work-order"
@@ -59,12 +60,12 @@
 													press="onHandleDetail">	
 														
 										<firstStatus>
-											<ObjectStatus text="{mainView>CO_GLTRI}" 
+											<ObjectStatus text="{path: 'mainView>CO_GLTRI', formatter: '.formatter.formatDate'}" 
 														  state="Warning"/>
 										</firstStatus>	
 
 										<ObjectAttribute title="{i18n>tableAttribLabel2}"
-														 text="{mainView>LOTE}" />
+														 text="{mainView>LOTE_MATNR}" />
 										<ObjectAttribute title="{i18n>tableAttribLabel3}"
 														 text="{mainView>SEQ_CONFIRMACAO}" />
 										<ObjectAttribute title="{i18n>tableAttribLabel1}"
@@ -107,17 +108,19 @@
 									
 						<semantic:content>
 
-							<ObjectHeader title="{mainView>/headerApontamento/title}"
-										  intro="{mainView>/headerApontamento/description}"
+							<ObjectHeader id="ID_HEADERDETAIL_MEANVIEW"
+										  title="{mainView>/headerApontamento/AUFNR}"
+										  intro="{mainView>/headerApontamento/COD_MAT} - {mainView>/headerApontamento/DESC_MAT}"
 										  icon="sap-icon://eam-work-order"
-										  number="{mainView>/headerApontamento/quant1}"
-										  numberUnit="{mainView>/headerApontamento/unit1}"
+										  number="{mainView>/headerApontamento/WEMNG} {mainView>/headerApontamento/LAGME}"
+										  numberUnit="{i18n>listItemLabel1}"
 										  numberState="Success"
 										  responsive="true">
 
 										<firstStatus>
-											<ObjectStatus text="{mainView>/headerApontamento/status}" 
-														  state="Error"/>
+											<ObjectStatus text="{path: 'mainView>/headerApontamento/APONT_FEITO', formatter: '.formatter.getTextStatusSend'}" 
+														  state="{path: 'mainView>/headerApontamento/APONT_FEITO', formatter: '.formatter.getColorStatusSend'}"
+														  icon="{path: 'mainView>/headerApontamento/APONT_FEITO', formatter: '.formatter.getIconStatusSend'}"/>
 										</firstStatus>											  
 
 							</ObjectHeader>
@@ -178,35 +181,35 @@
 									<ColumnListItem>
 										<cells>
 											<Text
-												text="{mainView>info4}" />										
+												text="{mainView>SEQ}" />										
 											<Text
-												text="{mainView>info1}" />										
+												text="{mainView>VORNR}" />										
 											<ObjectIdentifier
-												title="{mainView>info2}"
-												text="{mainView>info2_1}"/>
+												title="{mainView>LSTAR}"
+												text="{mainView>LTEXT}"/>
 											<HBox>
 												<Input
 													type="Number"
-													value="{mainView>info3}" 
+													value="{mainView>VGW01}" 
 													width="5rem"/>
-												<Text text="{mainView>info3_1}" 
+												<Text text="{mainView>VGWRTEH}" 
 													  class="sapUiSmallMarginBegin"/>
 											</HBox>
 											<ObjectIdentifier
-												title="{mainView>info5}"
-												text="{mainView>info5_1}"/>
+												title="{mainView>COD_MAT}"
+												text="{mainView>DESC_MAT}"/>
 											<Text
-												text="{mainView>info6}" />
+												text="{mainView>LOTE}" />
 											<HBox>
 												<Input
 													type="Number"
-													value="{mainView>info7}" 
+													value="{mainView>BDMNG}" 
 													width="5rem"/>	
-												<Text text="{mainView>info7_1}" 
+												<Text text="{mainView>MEINS}" 
 													  class="sapUiSmallMarginBegin"/>	
 											</HBox>
 											<Text
-												text="{mainView>info8}" />
+												text="{mainView>MESSAGE}" />
 										</cells>
 									</ColumnListItem>
 								</items>

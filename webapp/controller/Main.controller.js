@@ -4,17 +4,23 @@ sap.ui.define([
     "com/seidor/zuxppapont/model/formatter",
     "com/seidor/zuxppapont/model/constants",
     "sap/ui/model/Filter",
-    "sap/ui/model/FilterOperator"
+    "sap/ui/model/FilterOperator",
+    "sap/m/MessageToast",
+    "sap/m/MessageBox",
+    "sap/ui/core/BusyIndicator"
 ],
     /**
      * @param {typeof sap.ui.core.mvc.Controller} Controller
      */
     function (  BaseController,
-                JSONModel,
-                formatter,
-                constants,
-                Filter,
-                FilterOperator) {
+	JSONModel,
+	formatter,
+	constants,
+	Filter,
+	FilterOperator,
+    MessageToast,
+    MessageBox,
+    BusyIndicator) {
         "use strict";
 
         return BaseController.extend("com.seidor.zuxppapont.controller.Main", {
@@ -27,14 +33,16 @@ sap.ui.define([
                 // Model used to manipulate control states
                 oViewModel = new JSONModel({
                     tableOrders: [],
-                    headerApontamento: constants.DETAIL_HEADER,
-                    tableApontamentos: constants.DETAIL_TABLE,
+                    headerApontamento: {},
+                    tableApontamentos: [],
                     UserLoged: ''
                 });
 
                 this.setModel(oViewModel, "mainView");
-
                 this.createBancoDadosOffline();
+                this._globalModel = this.getModel();
+                this._createJob();
+
             },
 
             /**
@@ -51,6 +59,12 @@ sap.ui.define([
 			 * @public
 			 */            
             onHandleDetail: function(oEvent){
+
+                var oItem = oEvent.getSource(),
+                    oContext = oItem.getBindingContext("mainView"),
+                    sOrdem = oContext.getProperty("AUFNR");
+            
+                this._atualizaDetail(sOrdem);
                 this.byId("ID_PAGE_MAINVIEW").toDetail(this.createId("ID_DETAILPAGE_MAINVIEW"));
             },
 
@@ -65,11 +79,7 @@ sap.ui.define([
 			 * @public
 			 */ 
             onHandleDelete: function(oEvent){
-                var oViewModel = this.getModel("mainView");
-                oViewModel.setProperty("/headerApontamento", {});
-                oViewModel.setProperty("/tableOrders", []);
-                oViewModel.setProperty("/tableApontamentos", []);
-
+                this._clearView(true,true);
                 this.setDadosBancoOffline([]).then(result => { this._atualizaMaster(); }, this); 
             },
 
@@ -87,6 +97,7 @@ sap.ui.define([
 			 * @public
 			 */             
             onHandleAddFilter:function(oEvent){
+                
                 if (!this._oDialogVHlpOrdem) {
                     this._oDialogVHlpOrdem = sap.ui.xmlfragment(this.getView().getId(),"com.seidor.zuxppapont.view.fragments.DialogVHlpOrdem", this);
                 }
@@ -94,11 +105,12 @@ sap.ui.define([
                 this.getView().addDependent(this._oDialogVHlpOrdem);
                 jQuery.sap.syncStyleClass("sapUiSizeCompact", this.getView(), this._oDialogVHlpOrdem);
     
-                 this._oDialogVHlpOrdem.open();  
+                 this._oDialogVHlpOrdem.open();
 
                  var oTable = this.byId("ID_TABLE_ADDFILTER_DIALOG");
-                 oTable.setModel(this.getModel());
-                 //oTable.refreshAggregation("items");               
+                 
+                 oTable.setModel(this._globalModel);            
+
             },
 
  			/**
@@ -126,36 +138,62 @@ sap.ui.define([
                 
                 var oDados = [],
                     oSelectedItems = oEvent.getParameter("selectedItems");
+                
+                this.getDadosBancoOffline().then(result => {
 
-                oSelectedItems.forEach(function(oItem) {
-                    
-                    var sDados = oItem.getBindingContext().getObject(),
-                        sPath = "/GET_VALORES_PLANEJADOSSet(ORDEM='" + sDados.Ordem + "',MOSTRAR_ERROS='X')";
+                    this._dadosBancoBeforeUpdate = result;
+                
+                    oSelectedItems.forEach(function(oItem, oIndex) {
+                        
+                        var vLastIndex = !!(oSelectedItems.length == oIndex + 1),
+                            sDados = oItem.getBindingContext().getObject(),
+                            sPath = "/GET_VALORES_PLANEJADOSSet(ORDEM='" + sDados.Ordem + "',MOSTRAR_ERROS='X')";
+                        
+                        this.callApi(sPath, []).then(result => {
 
-                    this.sSelectedOrdem = sDados;
-
-                    this.callApi(sPath, []).then(result => {
-
-                        var aSelectOrdem = [];
-
-                        if(!!result.DADOS_VLRS_PLANJ){
-                            aSelectOrdem = JSON.parse(result.DADOS_VLRS_PLANJ);
-                            this.getDadosBancoOffline().then(result => {
-
-                                let sData = result.find(({ AUFNR }) => AUFNR == this.sSelectedOrdem.Ordem);
-
-                                if(!sData){
-                                    oDados = result.concat(aSelectOrdem);
-                                    this.setDadosBancoOffline(oDados).then(result => { this._atualizaMaster(); }, this); 
-                                }
-
-                            }, this);
-                        }
-						
-					    }).catch(reason => {
-					    	console.log(reason);
-					    }); 
+                            if(!!result.DADOS_VLRS_PLANJ){
+                                var oResults = JSON.parse(result.DADOS_VLRS_PLANJ);
+                                this._inserirBancoOffline(oResults, vLastIndex);
+                            }
+                            
+                            }).catch(reason => {
+                                console.log(reason);
+                            }); 
+                    }, this);
                 }, this);
+            },
+
+ 			/**
+			 * @public
+			 */              
+            onHandleSave: function(oEvent){
+                var oViewModel = this.getModel("mainView"),
+                    oDados = oViewModel.getProperty("/tableApontamentos");
+
+                oDados.forEach(function(oItem, oIndex) {  
+                    oDados[oIndex].APONT_FEITO = 'X';
+                    this.atualizaDadosBancoOffline(oItem).then(result => {  this._atualizaMaster(); 
+                                                                            this.getModel("mainView").setProperty("/tableApontamentos", oDados);}, this); 
+                }, this);
+                
+                this._oDadosFinal = oDados;
+                
+                if(!!this.isNetworkConnection()){
+                    this._sendDados(oDados,false);
+                }else{
+                    MessageBox.warning( this.getResourceBundle().getText("messageWarningSendDados"), 
+                    { title : this.getResourceBundle().getText("messageTileWarningSendDados"),
+                    styleClass: this.getOwnerComponent().getContentDensityClass()
+                   }, this);
+
+                    //Armazena Dados como pendente para ser enviado posteriormente pelo Job criado
+                    this._getDadosPend().then(result => {
+                        var oDadosFinal = result.concat(this._oDadosFinal);
+                        this._setDadosPend(oDadosFinal).then(result => {}, this); 
+                    }, this); 
+                                     
+                }
+
             },
 
 			/* =========================================================== */
@@ -163,12 +201,26 @@ sap.ui.define([
 			/* =========================================================== */   
  			/**
 			 * @private
+			 */                
+             _clearView: function(oMaster, oDetail){
+                var oViewModel = this.getModel("mainView");
+                
+                if(oMaster)
+                    oViewModel.setProperty("/tableOrders", []);
+
+                if(oDetail)    
+                    oViewModel.setProperty("/headerApontamento", {});
+                    oViewModel.setProperty("/tableApontamentos", []);
+            }, 			
+            
+            /**
+			 * @private
 			 */              
             _atualizaMaster: function(){
                 var oViewModel = this.getModel("mainView"),
                     oDados = [];
 
-                oViewModel.setProperty("/tableOrders", []);
+                this._clearView(true,false);
 
                 this.getDadosBancoOffline().then(result => {
                     result.forEach(function(oItem) {
@@ -181,6 +233,116 @@ sap.ui.define([
 
                     oViewModel.setProperty("/tableOrders", oDados);
                 }, this);
+            },
+
+            /**
+			 * @private
+			 */              
+            _atualizaDetail: function(oOrdem){
+                var oViewModel = this.getModel("mainView"),
+                    oDados = [];
+
+                this._SelectedOrdem = oOrdem;
+                this._clearView(false,true);
+
+                this.getDadosBancoOffline().then(result => {
+
+                    var sHeader = result.find(({ AUFNR }) => AUFNR == this._SelectedOrdem);
+                    oViewModel.setProperty("/headerApontamento", sHeader);
+
+                    var oDados = result.filter(({ AUFNR }) => AUFNR == this._SelectedOrdem);
+                    oViewModel.setProperty("/tableApontamentos", oDados);
+
+                }, this);
+
+            },
+
+            /**
+			 * @private
+			 */             
+            _inserirBancoOffline: function(pDadosAtuais, pLastRegister){
+
+                var oDados = [],
+                    oDadosAntigos = this._dadosBancoBeforeUpdate,
+                    oOrdens = pDadosAtuais;
+
+                var sData = oDadosAntigos.find(({ AUFNR }) => AUFNR == pDadosAtuais[0].AUFNR);
+
+                if(!sData){
+                    oDados = oDadosAntigos.concat(pDadosAtuais).filter(({ AUFNR }) => AUFNR !== "");
+                    this._dadosBancoBeforeUpdate = oDados;
+                    
+                    if(!!pLastRegister)
+                        this.setDadosBancoOffline(oDados).then(result => { 
+                            //Delete Adjacents por Ordem
+                            var oDataView = this._dadosBancoBeforeUpdate.filter((obj, index) => {
+                                return index === this._dadosBancoBeforeUpdate.findIndex(o => obj.AUFNR === o.AUFNR);
+                            });
+                            var oViewModel = this.getModel("mainView");
+                            oViewModel.setProperty("/tableOrders", oDataView);
+                        }, this); 
+                }
+
+            },
+
+            /**
+			 * @private
+			 */               
+            _sendDados: function(pDados, pIsJob){
+                var oDataModel = this._globalModel,
+                    oDados = pDados,
+                    vIsJob = pIsJob;
+                
+                var oEntry = { TAB_MENSAGEM: '',
+                               DADOS_VLRS_PLANJ: JSON.stringify(oDados) };
+                
+                if(!vIsJob)         
+                    BusyIndicator.show();
+
+                oDataModel.create("/SET_VALORES_PLANEJADOSSet", oEntry, {
+                    success: function (oData, oResponse) {
+
+                        if(!!vIsJob){
+                            oDados.forEach(function(oItem) {
+                               this._removeDadosPend(oItem);
+                            }, this);
+                        }else{
+                            BusyIndicator.hide();
+                            MessageToast.show(this.getResourceBundle().getText("messageSuccessSendDados"));
+                        }
+                        
+                        //Atualiza Valores no Banco Offline
+                        var sPath = "/GET_VALORES_PLANEJADOSSet(ORDEM='" + oDados[0].AUFNR + "',MOSTRAR_ERROS='X')";
+                        
+                        this.callApi(sPath, []).then(result => {
+
+                            if(!!result.DADOS_VLRS_PLANJ){
+                                var oResults = JSON.parse(result.DADOS_VLRS_PLANJ);
+                                console.log(oResults);
+                                /*oResults.forEach(function(oItem) {
+                                    this.atualizaDadosBancoOffline(oItem).then(result => {  if(!vIsJob){this._atualizaDetail(oDados[0].AUFNR);} }, this); 
+                                }, this);*/
+                            }
+                            
+                            }).catch(reason => {
+                                console.log(reason);
+                            });                         
+                        
+                    }.bind(this),
+                    error: function(oError){ 
+
+                        //Armazena Dados como pendente para ser enviado posteriormente pelo Job criado
+                        if(!vIsJob){
+                            BusyIndicator.hide();
+                            this._getDadosPend().then(result => {
+                                var oDadosFinal = result.concat(this._oDadosFinal);
+                                this._setDadosPend(oDadosFinal).then(result => {}, this); 
+                            }, this);
+                        }
+                        
+                     }.bind(this)
+                  });                    
             }
+
         });
     });
