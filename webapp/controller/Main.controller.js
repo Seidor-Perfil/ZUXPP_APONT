@@ -187,11 +187,13 @@ sap.ui.define([
 
                 oDados.forEach(function(oItem, oIndex) {  
                     oDados[oIndex].APONT_FEITO = 'X';
-                    this.atualizaDadosBancoOffline(oItem).then(result => {  this._atualizaMaster(); 
-                                                                            this.getModel("mainView").setProperty("/tableApontamentos", oDados);}, this); 
+                    oItem.APONT_FEITO = 'X';
+                    /*this.atualizaDadosBancoOffline(oItem).then(result => {  this._atualizaMaster(); 
+                                                                            this.getModel("mainView").setProperty("/tableApontamentos", oDados);}, this);*/
                 }, this);
                 
                 this._oDadosFinal = oDados;
+                this.getModel("mainView").setProperty("/tableApontamentos", this._oDadosFinal);
                 
                 if(!!this.isNetworkConnection()){
                     this._sendDados(oDados,false);
@@ -200,6 +202,12 @@ sap.ui.define([
                     { title : this.getResourceBundle().getText("messageTitleWarning"),
                     styleClass: this.getOwnerComponent().getContentDensityClass()
                    }, this);
+
+                   //Armazena atualização no banco offline
+                   this._atualizaBancoOffline(oDados, true);
+                   /*oDados.forEach(function(oItem, oIndex) { 
+                        this.atualizaDadosBancoOffline(oItem).then(result => {}, this);
+                   }, this);*/                     
 
                     //Armazena Dados como pendente para ser enviado posteriormente pelo Job criado
                     this._getDadosPend().then(result => {
@@ -316,38 +324,28 @@ sap.ui.define([
 
                 oDataModel.create("/SET_VALORES_PLANEJADOSSet", oEntry, {
                     success: function (oData, oResponse) {
+                        
+                        oDados.forEach(function(oItem) {
+                            this._removeDadosPend(oItem);
+                         }, this);
 
-                        if(!!vIsJob){
-                            oDados.forEach(function(oItem) {
-                               this._removeDadosPend(oItem);
-                            }, this);
-                        }else{
+                        if(!vIsJob){
                             BusyIndicator.hide();
                             MessageToast.show(this.getResourceBundle().getText("messageSuccessSendDados"));
                         }
                         
                         //Atualiza Valores no Banco Offline
-                        var sPath = "/GET_APONTAMENTOSSet(ORDEM='" + oDados[0].AUFNR + "',DADOS_APONTAMENTO='')";
-                        
-                        this.callApi(sPath, []).then(result => {
+                        var oMsgs = JSON.parse(oData.TAB_MENSAGEM);
 
-                            if(!!result.DADOS_APONTAMENTO){
-                                var oResults = JSON.parse(result.DADOS_APONTAMENTO);
-                                
-                                //Joga todas as mensagens de retorno no primeiro item
-                                if(!!oResults.length)
-                                    oDados[0].MESSAGE = oResults[0].MESSAGE1 + oResults[0].MESSAGE2 + oResults[0].MESSAGE3 + oResults[0].MESSAGE4 + oResults[0].MESSAGE5 + 
-                                                        oResults[0].MESSAGE6 + oResults[0].MESSAGE7 + oResults[0].MESSAGE8 + oResults[0].MESSAGE9 + oResults[0].MESSAGE10 +
-                                                        oResults[0].MESSAGE11 + oResults[0].MESSAGE12 + oResults[0].MESSAGE13 + oResults[0].MESSAGE14 + oResults[0].MESSAGE15;
-                                
-                                oDados.forEach(function(oItem) {
-                                    this.atualizaDadosBancoOffline(oItem).then(result => {  if(!vIsJob){this._atualizaDetail(oDados[0].AUFNR); } }, this); 
-                                }, this);
-                            }
-                            
-                            }).catch(reason => {
-                                console.log(reason);
-                            });                         
+                        //Joga todas as mensagens de retorno no primeiro item
+                        oDados[0].MESSAGE = '';
+
+                        oMsgs.forEach(function(oItem) {
+                            oDados[0].MESSAGE += oItem.MESSAGE;
+                        }, this);
+
+                        //Armazena atualização no banco offline
+                        this._atualizaBancoOffline(oDados, vIsJob);  
                         
                     }.bind(this),
                     error: function(oError){ 
@@ -363,6 +361,23 @@ sap.ui.define([
                         
                      }.bind(this)
                   });                    
+            },
+
+            /**
+			 * @private
+			 */               
+            _atualizaBancoOffline(oDados, pIsJob){
+                var oViewModel = this.getModel("mainView"),
+                    sSelectedOrdem = oViewModel.getProperty("/headerApontamento");
+
+                this.removeDadosBancoOffline(oDados[0]).then(result => {      
+                    this.getDadosBancoOffline().then(result => {  var oItems = result.concat(oDados);
+                                                                  this.setDadosBancoOffline(oItems).then(result => { this._atualizaMaster();
+                                                                                                                     if(!pIsJob || sSelectedOrdem.AUFNR == oDados[0].AUFNR){ 
+                                                                                                                        this._atualizaDetail(oDados[0].AUFNR);  }
+                                                                                                                    }, this);                                                 
+                    }, this);     
+                }, this);                
             }
 
         });

@@ -148,7 +148,7 @@ sap.ui.define([
 						oDados = result;
 						
 						oDados = oDados.filter(function(oEntry){
-							return oEntry.AUFNR !== oData.AUFNR || oEntry.SEQ !== oData.SEQ;
+							return oEntry.AUFNR !== oData.AUFNR;
 						});
 						
 						this.setDadosBancoOffline(oDados).then(result => {

@@ -22,6 +22,10 @@ sap.ui.define([
         },
 
         formatDate: function(pValue1){
+
+            if(!pValue1)
+                return '';
+
             return pValue1 == '00000000' ? '' : pValue1.substring(6,8) + 
                                                 "/" + pValue1.substring(4,6) + 
                                                 "/" + pValue1.substring(0,4);
