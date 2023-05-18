@@ -33,7 +33,7 @@ sap.ui.define([
 					return this.getView().getModel(sName);
 				}else{
 					if(this.isStandAlone()){
-						return new sap.ui.model.odata.v2.ODataModel( this.getHost() + constants.MAIN_SERVICE + '/?sap-client=050', 
+						return new sap.ui.model.odata.v2.ODataModel( this.getHost() + constants.MAIN_SERVICE + '/?sap-client=' + fiori_client_appConfig.fioriMandt, 
 																		{ headers:{"X-Requested-With":"X",
 																			   	   "Authorization": "BASIC " + this._getAuthorization() }});
 					}else{
